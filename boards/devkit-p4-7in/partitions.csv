@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sindri partition table — single source of truth (SPEC-01 §5).
+# 32 MiB flash. Documents live on SD, never here.
+# name,      type, subtype,  offset,    size,     flags
+bootloader,  app,  boot,     0x000000,  0x010000,          # Brokkr; offset fixed by ROM
+ptable,      data, table,    0x010000,  0x001000,
+bootctl,     data, bootctl,  0x011000,  0x002000,          # A/B state, rollback counter
+os_a,        app,  ota_0,    0x020000,  0x600000,          # 6 MiB
+os_b,        app,  ota_1,    0x620000,  0x600000,          # 6 MiB
+recovery,    app,  factory,  0xC20000,  0x100000,  ro      # never OTA-updated (R-01-10)
+sysdata,     data, nvs,      0xD20000,  0x080000,          # device identity, launcher id
+l10n,        data, fat,      0xDA0000,  0x100000,  ro      # Fluent bundles
+dict,        data, fat,      0xEA0000,  0x800000,  ro      # DAWG + dictionary (R-04-20)
+applocal,    data, fat,      0x16A0000, 0x960000,          # installed .wdapp + per-app store

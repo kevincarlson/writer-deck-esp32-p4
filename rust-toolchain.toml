@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+[toolchain]
+channel    = "nightly-2026-05-01"   # pin; bump deliberately, never floating
+components = ["rust-src", "llvm-tools", "clippy", "rustfmt"]
+targets    = ["riscv32imafc-unknown-none-elf", "wasm32-unknown-unknown"]

@@ -1,0 +1,90 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# PHASE 0 STATE: the workspace is intentionally empty. No firmware crate exists
+# yet, and Phase 0 does not create one — spikes are throwaway and live in
+# `spikes/`, each its own independent workspace (PLAN.md §"Phase 0", CLAUDE.md
+# §2). The member list below is the Phase 1 target from SPEC-00 §8; uncomment
+# each line as its crate lands. Until then `cargo check` at the root reports
+# "the workspace has no members", which is the accurate state, not a defect.
+[workspace]
+resolver = "2"
+members = [
+  # --- Phase 1: board bring-up and kernel skeleton ---
+  # "crates/hal",
+  # "crates/kernel",
+  # "crates/panel",
+  # "crates/services/display",
+  # "crates/services/input",
+  # "crates/services/storage",
+  # "crates/ui/lvgl-sys",
+  # "tools/xtask",
+  # --- Phase 2: Brokkr ---
+  # "crates/boot",
+  # --- Phase 3: runtime, ABI, lifecycle ---
+  # "crates/abi",
+  # "crates/ui/tree",
+  # "crates/ui/textview",
+  # "crates/runtime/host",
+  # "crates/runtime/loader",
+  # "sdk/sindri-app",
+  # "sdk/simulator",
+  # --- Phase 4: installation tooling ---
+  # "tools/wdapp",
+  # --- Phase 6: network and feeds ---
+  # "crates/services/net",
+  # "crates/services/feed",
+  # --- unscheduled ---
+  # "crates/services/audio",
+  # "crates/services/crypto",
+]
+# WASM apps build for wasm32-unknown-unknown and are excluded from the
+# firmware workspace to keep target resolution unambiguous.
+# `spikes` is excluded for the same reason plus one more: spike code is
+# throwaway and must never be reachable from a firmware build.
+exclude = ["apps", "spikes"]
+
+[workspace.package]
+edition = "2021"
+license = "Apache-2.0"
+rust-version = "1.85"
+
+[workspace.dependencies]
+# no_std core
+heapless      = "0.8"
+bitflags      = "2"
+defmt         = "0.3"
+defmt-rtt     = "0.4"
+critical-section = "1"
+embedded-hal  = "1"
+embedded-io   = "0.6"
+# errors — see CLAUDE.md §4; thiserror 2.x supports no_std
+thiserror     = { version = "2", default-features = false }
+# runtime
+wasmi         = { version = "0.4x", default-features = false }   # pin in Phase 3
+# crypto (app package signing — ADR-S011)
+ed25519-dalek = { version = "2", default-features = false }
+sha2          = { version = "0.10", default-features = false }
+# serialisation
+minicbor      = { version = "0.24", default-features = false, features = ["alloc"] }
+# l10n
+fluent-bundle = { version = "0.15", default-features = false }
+
+[profile.release]
+opt-level        = "s"     # size matters more than speed outside hot paths
+lto              = "fat"
+codegen-units    = 1
+panic            = "abort"
+debug            = 2       # keep symbols; stripped at image build
+overflow-checks  = true    # deliberate: correctness over a few cycles
+
+[profile.release.package.sindri-boot]
+opt-level = "z"            # 48 KiB ceiling, R-01-02
+
+# Hot paths that must not be size-optimised.
+[profile.release.package.sindri-textview]
+opt-level = 3
+[profile.release.package.sindri-ui-tree]
+opt-level = 3
+
+[profile.dev]
+opt-level = 1              # unoptimised no_std builds are unusably slow on device
