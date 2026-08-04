@@ -25,6 +25,7 @@ Status is one of: `not started`, `in progress`, `draft`, `complete`.
 | — | N1 — C6 link, HTTP, TLS | R-06, R-07, OQ-3, ADR-S023 | `spikes/n1-net/` | not started |
 | — | T1 — Text stack memory | SPEC-00 §6 budget | `spikes/t1-text/` | not started |
 | — | L1 — LVGL bindings in `no_std` | R-04 | `spikes/l1-lvgl/` | not started |
+| — | I1 — Input path | OQ-1, R-12, ADR-S024 | `spikes/i1-input/` | not started |
 
 No finding has been written yet. Nothing in this directory should be read as a
 result until its row above says `complete` and the file exists.

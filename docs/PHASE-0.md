@@ -11,7 +11,7 @@ ESP-IDF C bootloader (ADR-S010) means Phase 1 does **not** block on B1.
 
 ## 1. Spikes
 
-Six spikes, all `not started`. Each produces a written finding in
+Seven spikes, all `not started`. Each produces a written finding in
 `docs/findings/`; code alone does not close a spike.
 
 | Spike | Question | Code | Finding | ADR owed | Status |
@@ -22,6 +22,7 @@ Six spikes, all `not started`. Each produces a written finding in
 | N1 | Is ESP-HOSTED practical outside ESP-IDF, and what does TLS cost? | `spikes/n1-net/` | — | S023 | not started |
 | T1 | What does the text stack actually cost in memory? | `spikes/t1-text/` | — | — | not started |
 | L1 | Do LVGL 9 bindings work in `no_std`? | `spikes/l1-lvgl/` | — | — | not started |
+| I1 | Which input path holds ≤ 50 ms p99? | `spikes/i1-input/` | — | S024 | not started |
 
 Ordering note: B1 is the highest-risk item and the plan says to budget it
 generously, but it does not gate the others. D1, W1, T1, and L1 are
@@ -29,14 +30,20 @@ independent of it. B1 and D1 both touch PSRAM and cache configuration, so a
 B1 result changes D1's measurement conditions — record D1's PSRAM mode
 explicitly (R-01-05) or the frame numbers cannot be compared later.
 
+I1 is the one spike with a **procurement** dependency rather than only an
+engineering one: the matrix-keyboard path needs an MCU and a physical matrix
+that may not be on the desk. Start it early for that reason, not because it is
+the hardest. If only one of the two paths can be measured, OQ-1 does not
+close — see `spikes/i1-input/README.md`.
+
 ---
 
 ## 2. Exit criteria
 
 Copied from `PLAN.md` so this file can be checked off. None are met.
 
-- [ ] All six spikes have written findings in `docs/findings/`.
-- [ ] ADRs S021–S023 (and any others arising) are recorded.
+- [ ] All seven spikes have written findings in `docs/findings/`.
+- [ ] ADRs S021–S024 (and any others arising) are recorded.
 - [ ] `SPEC-00 §2` confidence column updated; every Medium row is now High or
       has a named fallback.
 - [ ] OQ-1 (input path) resolved.
@@ -50,7 +57,7 @@ Copied from `PLAN.md` so this file can be checked off. None are met.
 
 | OQ | Question | Recommended default (pending evidence) | Settled by |
 |---|---|---|---|
-| OQ-1 | Input path: USB HID host, matrix keyboard on an MCU, or BLE HID via C6 | None. BLE HID is explicitly *not* recommended — it puts the radio in the critical path of typing | No spike is assigned to this in the plan — see §4 |
+| OQ-1 | Input path: USB HID host, matrix keyboard on an MCU, or BLE HID via C6 | None. BLE HID is explicitly *not* recommended — it puts the radio in the critical path of typing | I1 |
 | OQ-2 | PSRAM size and mode: 16 vs 32 MiB, achievable clock | 32 MiB assumed by the `SPEC-00 §6` budget; 16 MiB has a named fallback (one warm slot, halved page cache) | B1 |
 | OQ-3 | Host↔C6 transport: SDIO vs SPI | SPI — all network use is scheduled batch fetching | N1 |
 
@@ -62,7 +69,7 @@ Copied from `PLAN.md` so this file can be checked off. None are met.
 | PSRAM 32 MiB | Assumption | B1 / OQ-2 |
 | Radio transport | Medium | N1 / OQ-3 |
 | Accelerators (2D-DMA, PPA, JPEG) — Rust driver availability | Medium | D1 |
-| Input | Unresolved | OQ-1 |
+| Input | Unresolved | I1 / OQ-1 |
 
 ---
 
@@ -84,18 +91,14 @@ Copied from `PLAN.md` so this file can be checked off. None are met.
 
 ---
 
-## 4. Known gap in the plan
+## 4. Known gaps in the plan
 
-**OQ-1 has no spike assigned to it.** `PLAN.md` lists OQ-1 as a Phase 0 exit
-criterion, and `SPEC-00 §2` lists it as blocking Phase 1, but none of the six
-spikes investigates the input path. R-12 assigns its mitigation to Phase 1
-("prototype the two viable paths"), which contradicts resolving it at Phase 0
-exit.
+**Closed — OQ-1 had no spike assigned to it.** `PLAN.md` listed OQ-1 as a
+Phase 0 exit criterion and `SPEC-00 §2` listed it as blocking Phase 1, while
+R-12 assigned its mitigation to Phase 1. Resolved by adding **Spike I1** and
+moving R-12's owner phase to `0, 1`, on the reasoning that the ≤ 50 ms typing
+budget and radio-gated summon are premises Phase 1's `services/input` is built
+against rather than outcomes of it.
 
-This is unresolved and is not resolved by this setup commit. It needs one of:
-a seventh spike (I1) covering USB HID host on the P4 OTG-HS versus a matrix
-keyboard on a dedicated MCU; or a plan amendment moving OQ-1's resolution to
-Phase 1 alongside R-12. Either is a spec/plan amendment and belongs in its own
-commit, not in an implementation commit.
-
-Recorded here rather than decided, per `CLAUDE.md` §10.
+No further gaps identified. Record new ones here rather than deciding them in
+an implementation commit (`CLAUDE.md` §2, §10).

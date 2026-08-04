@@ -25,8 +25,9 @@ These IDs are claimed by `PLAN.md` and must not be reused:
 | ADR-S021 | Spike B1 | Achieved PSRAM mode, clock, and init approach — and whether the bootloader is Rust end-to-end or needs the narrow C shim (SPEC-01 §8) |
 | ADR-S022 | Spike D1 | Measured frame rate with conditions; 60 vs 30 Hz target; double vs single buffer |
 | ADR-S023 | Spike N1 | Host↔C6 transport and protocol; TLS stack choice |
+| ADR-S024 | Spike I1 | Input path (USB HID host vs. matrix keyboard on an MCU), and the summon gesture that follows from it |
 
-Further ADRs arising from Phase 0 continue from S024.
+Further ADRs arising from Phase 0 continue from S025.
 
 Two ADRs already carry an open condition that Phase 0 resolves:
 
@@ -42,3 +43,4 @@ Two ADRs already carry an open condition that Phase 0 resolves:
 | S021 | PSRAM init and mode | not written | owed by B1 |
 | S022 | Display path and frame target | not written | owed by D1 |
 | S023 | C6 transport and TLS | not written | owed by N1 |
+| S024 | Input path and summon gesture | not written | owed by I1 |

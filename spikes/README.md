@@ -37,6 +37,7 @@ spikes/w1-wasmi/     wasmi throughput and fuel           (R-05)
 spikes/n1-net/       C6 link, HTTP, TLS                  (R-06, R-07)
 spikes/t1-text/      text stack memory                   (SPEC-00 §6)
 spikes/l1-lvgl/      LVGL 9 bindings in no_std           (R-04)
+spikes/i1-input/     input path                          (OQ-1, R-12)
 ```
 
 Each starts as a README stating the question and what would settle it. Code
