@@ -95,10 +95,31 @@ Generate LVGL 9 bindings in-tree with `bindgen`. Confirm a `no_std` build,
 custom allocator hookup, and a rendered frame. Assess whether `lvgl-rs` is
 usable or whether in-tree generation is the answer.
 
+### Spike I1 — Input path (OQ-1, R-12)
+
+Prototype the **two viable paths** and measure both: USB HID host via the P4's
+USB OTG-HS, and a matrix keyboard on a dedicated MCU over I2C/UART. BLE HID via
+the C6 is measured only if both others fail — it puts the radio in the critical
+path of typing and is not recommended (SPEC-00 §2).
+
+Measure, per path:
+
+- Keypress → glyph, p99 over a sustained typing run, against the ≤ 50 ms budget.
+  Measured at the point where the host TextView draws, since R-04-01 puts typing
+  below the app; a measurement taken at event dispatch is not the budget.
+- The summon-key interception path (R-03-01) and what it contributes to the
+  120 ms summon budget (R-03-02).
+- Idle and active current with the C6 rail off, which is what decides whether
+  the launcher can be summoned while the radio is gated.
+
+- Settles: OQ-1, and the R-12 latency-budget dependency.
+- `[PRESENCE]` Ghosting and n-key rollover on the chosen path (CLAUDE.md §9).
+- Output: ADR-S024.
+
 ### Phase 0 exit criteria
 
-- All six spikes have written findings in `docs/findings/`.
-- ADRs S021–S023 (and any others arising) are recorded.
+- All seven spikes have written findings in `docs/findings/`.
+- ADRs S021–S024 (and any others arising) are recorded.
 - `SPEC-00 §2` confidence column is updated; every Medium row is now High or
   has a named fallback.
 - OQ-1 (input path), OQ-2 (PSRAM size), OQ-3 (transport) are **resolved**.

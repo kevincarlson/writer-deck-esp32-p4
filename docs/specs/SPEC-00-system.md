@@ -57,7 +57,7 @@ is incomplete in places; the plan is built around discovering exactly where.
   This determines input latency, power behaviour, and whether the launcher can
   be summoned while the radio is gated. BLE HID is the worst of the three for
   the distraction model (it puts the radio in the critical path of typing) and
-  is not recommended.
+  is not recommended. Settled by Spike I1; no default is recommended pending it.
 - **OQ-2 — PSRAM size and mode.** 16 vs 32 MiB, and the clock/mode achievable.
   The memory budget in §6 assumes 32 MiB. At 16 MiB the warm-slot count drops
   to one and EPUB page caching shrinks; the design survives but the budgets
@@ -273,7 +273,7 @@ sindri/
 | R-09 | ABI proves wrong after third-party apps exist and cannot be changed | **Very High** | Medium | Small 1.0. Conformance suite. Widgets/services over functions. Prototype the writer and reader against a draft ABI *before* freezing | 3, 5, 6 |
 | R-10 | Mermaid layered layout consumes the schedule | Medium | High | ADR-S018 defers it behind a spike. Do not start it inside a milestone that promises anything else | later |
 | R-11 | Support burden from an open ecosystem lands on a solo maintainer | Medium | High | Fault containment, per-app crash logs attributable to the app, an SDK with a conformance harness so contributors self-diagnose | 7 |
-| R-12 | Input path unresolved (OQ-1) invalidates latency budgets | Medium | Medium | Resolve before Phase 1 exit. Prototype the two viable paths | 1 |
+| R-12 | Input path unresolved (OQ-1) invalidates latency budgets | Medium | Medium | Spike I1 in Phase 0 prototypes the two viable paths and resolves OQ-1. Phase 1 builds `services/input` against that answer | 0, 1 |
 
 ---
 
