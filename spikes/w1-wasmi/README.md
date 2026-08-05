@@ -1,6 +1,7 @@
 # Spike W1 — `wasmi` throughput and fuel
 
-**Status:** not started
+**Status:** in progress — fuel half done off-device, wall-time half blocked on
+hardware. See `docs/findings/FINDING-W1-fuel-host-baseline.md`.
 **Risk:** R-05 — interpreter too slow for the UI tree build at 60 Hz
 **Settles:** ADR-S002 (interpreter vs AOT), currently *Provisional*, and the
 default `fuel-per-frame`
@@ -54,3 +55,58 @@ number.
 
 `CLAUDE.md` §3: the first frames after boot are not steady state. Report
 median and p99 over a sustained run, and say whether the device was warm.
+
+---
+
+## What this can and cannot answer off-device
+
+The two halves of W1 have different portability, and the harness is built
+around that split.
+
+**Fuel is portable.** `wasmi` charges fuel from a fixed cost table
+(`wasmi_core::FuelCostsProvider`) applied by the translator. It is a property
+of the compiled `.wasm` and the `wasmi` version, not of the host CPU. `run.sh`
+proves this rather than asserting it: it runs the identical module on x86_64
+and on riscv64 under qemu and diffs the fuel columns, failing if they differ.
+
+**Wall time is not portable.** Every microsecond figure this harness prints is
+the machine it ran on. None of it bears on the 16.6 ms frame budget. The
+report labels this on every run; do not strip the label when quoting numbers.
+
+So: the `fuel-per-frame` floor for R-02-24 is answerable here. Whether the
+interpreter is fast enough — the actual R-05 question, and ADR-S002's
+condition — is not, and this spike stays open until it runs on a P4.
+
+## Running it
+
+```bash
+./run.sh              # guest build, native run, cross-arch fuel check
+./run.sh 5000 500     # more samples
+```
+
+The harness **fails the run** rather than printing a plausible number when:
+fuel varies across identical calls; the no-op true negative comes within 1% of
+a frame; the tree is not ~300 nodes; or `bench_frame` never reaches the host
+boundary. All four of those fired on the first run and each was a real defect.
+
+The cross-architecture check needs `qemu-user-static` and the
+`riscv64gc-unknown-linux-gnu` target; without them `run.sh` skips it and says
+so rather than passing silently.
+
+## Layout
+
+```
+guest/          the app workload, no_std, wasm32-unknown-unknown
+  tree.rs       300-node UI tree + encoder   <-- NOT crates/abi's codec
+  markdown.rs   incremental classifier with block-context cache (R-04-02)
+  fountain.rs   element classification (R-04-07 shape)
+  arena.rs      static bump arena, no `alloc`
+corpus/         60+ lines each of Markdown and Fountain, chosen for the
+                cases that break line-independent classification
+src/            the harness: runner.rs measures, report.rs checks itself
+```
+
+`guest/src/tree.rs` mirrors the *shape* of SPEC-02 §4's encoding so the fuel
+figure is representative. It is not the codec, it is not normative, and
+copying it into `crates/abi` would be exactly the second-copy defect
+`CLAUDE.md` §2 warns about.

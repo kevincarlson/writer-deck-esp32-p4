@@ -11,14 +11,20 @@ ESP-IDF C bootloader (ADR-S010) means Phase 1 does **not** block on B1.
 
 ## 1. Spikes
 
-Seven spikes, all `not started`. Each produces a written finding in
-`docs/findings/`; code alone does not close a spike.
+Seven spikes. Each produces a written finding in `docs/findings/`; code alone
+does not close a spike.
+
+**Every spike needs an ESP32-P4. Six of the seven cannot start without one.**
+W1 is the exception, and only partly: `wasmi` fuel is charged from a static
+cost table and is therefore host-independent, so the `fuel-per-frame` half of
+W1 is answerable off-device. Its wall-time half — which is the actual R-05
+question and ADR-S002's condition — is not. W1 is `in progress`, not done.
 
 | Spike | Question | Code | Finding | ADR owed | Status |
 |---|---|---|---|---|---|
 | B1 | Can PSRAM be brought up from Rust on the P4? | `spikes/b1-psram/` | — | S021 | not started |
 | D1 | What frame rate does the DSI panel path sustain? | `spikes/d1-display/` | — | S022 | not started |
-| W1 | Is `wasmi` fast enough for a per-frame UI tree build? | `spikes/w1-wasmi/` | — | — (settles S002) | not started |
+| W1 | Is `wasmi` fast enough for a per-frame UI tree build? | `spikes/w1-wasmi/` | [W1 draft](findings/FINDING-W1-fuel-host-baseline.md) | — (settles S002) | **in progress** |
 | N1 | Is ESP-HOSTED practical outside ESP-IDF, and what does TLS cost? | `spikes/n1-net/` | — | S023 | not started |
 | T1 | What does the text stack actually cost in memory? | `spikes/t1-text/` | — | — | not started |
 | L1 | Do LVGL 9 bindings work in `no_std`? | `spikes/l1-lvgl/` | — | — | not started |

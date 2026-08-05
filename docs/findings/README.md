@@ -21,13 +21,19 @@ Status is one of: `not started`, `in progress`, `draft`, `complete`.
 |---|---|---|---|---|
 | — | B1 — Rust PSRAM init and flash mapping | R-01, ADR-S021, OQ-2 | `spikes/b1-psram/` | not started |
 | — | D1 — Display path and frame rate | R-02, R-03, ADR-S022 | `spikes/d1-display/` | not started |
-| — | W1 — `wasmi` throughput and fuel | R-05, ADR-S002 | `spikes/w1-wasmi/` | not started |
+| [W1 fuel host baseline](FINDING-W1-fuel-host-baseline.md) | W1 — `wasmi` throughput and fuel | R-05, ADR-S002 | `spikes/w1-wasmi/` | **draft — partial** |
 | — | N1 — C6 link, HTTP, TLS | R-06, R-07, OQ-3, ADR-S023 | `spikes/n1-net/` | not started |
 | — | T1 — Text stack memory | SPEC-00 §6 budget | `spikes/t1-text/` | not started |
 | — | L1 — LVGL bindings in `no_std` | R-04 | `spikes/l1-lvgl/` | not started |
 | — | I1 — Input path | OQ-1, R-12, ADR-S024 | `spikes/i1-input/` | not started |
 
-No finding has been written yet. Nothing in this directory should be read as a
-result until its row above says `complete` and the file exists.
+Nothing in this directory should be read as a settled result until its row
+above says `complete`.
+
+**W1 is `draft — partial` and the distinction matters.** Its fuel numbers are
+device-independent and stand; its wall-time numbers are from a development
+machine and answer nothing about the ESP32-P4. The spike is not closed and
+ADR-S002 remains Provisional. Every other spike needs hardware that this
+environment does not have.
 
 Phase 0 exit tracking lives in `docs/PHASE-0.md`.

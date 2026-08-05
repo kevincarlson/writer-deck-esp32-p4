@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+# Spike W1 host runner — throwaway. See README.md.
+[package]
+name    = "w1-host"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[workspace]   # keeps this out of the root firmware workspace
+
+[dependencies]
+# no_std-capable configuration, matching how the kernel will use it. The
+# workspace manifest still carries the "0.4x" placeholder from before this
+# spike; see the finding.
+wasmi = { version = "1.1", default-features = false }
+
+[profile.release]
+opt-level = 3

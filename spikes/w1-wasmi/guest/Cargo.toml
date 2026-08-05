@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+# Spike W1 guest — throwaway. See ../README.md.
+[package]
+name    = "w1-guest"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[workspace]   # keeps this out of the root firmware workspace
+
+[lib]
+crate-type = ["cdylib"]
+
+# The fuel figure this spike reports is a property of THIS compiled .wasm.
+# Change any of these and the number changes. Recorded in the finding.
+[profile.release]
+opt-level     = "s"
+lto           = true
+codegen-units = 1
+panic         = "abort"
