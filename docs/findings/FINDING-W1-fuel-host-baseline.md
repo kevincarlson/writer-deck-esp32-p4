@@ -36,6 +36,7 @@ cannot. This finding reports the first and explicitly refuses the second.
 | Runtime | `wasmi` **1.1.0**, `default-features = false`, `Config::default()` plus `consume_fuel(true|false)`, default (lazy) translation |
 | Hosts | (a) x86_64 Linux, native. (b) `riscv64gc-unknown-linux-gnu` under `qemu-riscv64-static` 8.2.2 |
 | Board | **none — no ESP32-P4 was involved in this measurement** |
+| Module under test | `spikes/w1-wasmi/artifacts/w1_guest.wasm`, 11,555 bytes, sha256 `48fc0c7ab837cded944e252c3aa97794d1ea214d575b8c9c3e66865286b9dcf5` — committed, because the fuel figures are a property of these exact bytes |
 | CPU clock | n/a |
 | PSRAM part / mode / clock | n/a |
 | Cache config | n/a |
@@ -75,6 +76,22 @@ non-zero if they ever diverge, so this stays checked rather than remembered.
 | Markdown style runs | 40 over 60 lines |
 | Fountain style runs | 32 over 60 lines |
 
+### `wasmi` builds `no_std` for the P4's target
+
+`wasmi` 1.1.0 with `default-features = false` compiles cleanly for
+**`riscv32imafc-unknown-none-elf`** on the pinned `nightly-2026-05-01`, both as
+a bare dependency and as the full device runner in `spikes/w1-wasmi/device/`.
+No fork, no patch, no C shim.
+
+This matters more than it looks: it removes the possibility that R-05's
+mitigation ladder gets reached for the wrong reason. If `wasmi` had not built
+for the target, "the interpreter is too slow" and "the interpreter does not
+compile" would have been easy to conflate under schedule pressure.
+
+The device runner is written and its logic is tested — 17 tests, including
+five that inject faults and confirm the run refuses to report. It has never
+executed on silicon.
+
 ### Fuel-metering overhead, wall time, x86_64 native
 
 | Export | metered median | unmetered median | overhead |
@@ -103,8 +120,10 @@ The list is long and that is the honest state of it.
 5. **32-bit pointer width.** Both hosts were 64-bit. Fuel is charged per wasm
    instruction so it should not depend on host pointer width — but "should"
    is not "was measured".
-6. **`no_std`.** The harness linked `wasmi` with `default-features = false`
-   but ran on a `std` host. The kernel embeds it `no_std`.
+6. **`no_std` at run time.** `wasmi` now demonstrably *compiles* `no_std` for
+   `riscv32imafc-unknown-none-elf`, and so does the device runner. Neither has
+   *executed* in that configuration. Compiling is not running: the allocator,
+   the clock source, and every trap path are untested on hardware.
 7. **Workload realism.** The classifiers, the tree encoder, and the corpus in
    `spikes/w1-wasmi/` are my construction. The real Markdown and Fountain
    classifiers (SPEC-04) and the real tree codec (`crates/abi`) do not exist,
@@ -115,6 +134,12 @@ The list is long and that is the honest state of it.
 9. **The mitigation ladder** — keyed diffing, host widgets, AOT — is untouched.
 10. **Eager vs lazy translation.** Left at the `wasmi` default; the first-call
     premium may be an artifact of lazy translation rather than of cold caches.
+11. **The `mcycle` CSR on ESP32-P4.** The device runner's default clock reads
+    `mcycle`/`mcycleh`. That is machine-mode standard RISC-V and the HP cores
+    are RV32IMAFC, so it is the expected source — but it is unverified on this
+    silicon, and a stuck counter reads as an infinitely fast device. The
+    runner self-checks for exactly that before measuring; the fallback is a
+    `SYSTIMER`/`TIMG` alarm through `esp-hal`.
 
 ---
 
@@ -161,12 +186,31 @@ confident fuel figure for a workload that never ran.
 
 ## What would settle it
 
-1. Run **this exact `.wasm`** on the P4 under `wasmi` `no_std`, at 400 MHz,
-   with the PSRAM mode and cache config recorded per R-01-05. Measure
-   `bench_frame` wall time, median and p99, warm.
-2. Divide fuel by time to get device fuel-per-second. That single constant
-   makes every fuel figure in this document convertible, including future ones,
-   without re-running the workload.
+**Step 1 is written and waiting.** `spikes/w1-wasmi/device/` is a `no_std`
+library that runs this exact `.wasm`, times it, self-checks, and derives
+fuel-per-second. It compiles for `riscv32imafc-unknown-none-elf` today. The
+board must supply four things and call `run`:
+
+| Needed | Notes |
+|---|---|
+| Entry point | `riscv-rt` or `esp-hal`, clocks configured to the rate passed as `hz` |
+| Global allocator | `wasmi` needs `alloc`. Internal SRAM suffices |
+| A `Clock` | `CycleClock` reads `mcycle`; `self_check` refuses a stuck counter |
+| A `core::fmt::Write` sink | `defmt` adapter, UART, or RTT |
+
+**It does not need PSRAM.** The module is 11,555 bytes and `wasmi`'s working
+set for it is small, so the measurement should fit in internal SRAM — which
+means this does **not** block on Spike B1 and is the cheapest useful thing to
+run on a newly arrived board, before display, C6, or PSRAM work.
+
+Then:
+
+1. Run it at 400 MHz, recording the clock config, and the PSRAM mode per
+   R-01-05 if PSRAM is up by then. Report median and p99, warm.
+2. Read **fuel-per-second** off the report. That single constant makes every
+   fuel figure in this document convertible, including future ones, without
+   re-running the workload. The runner prints it, and prints `not computed`
+   rather than a fabricated zero when the self-checks fail.
 3. Compare `bench_tree` alone against the ~4 ms trigger in PLAN.md. If it
    exceeds, work the mitigation ladder in the fixed order — keyed diffing,
    host widgets, then AOT — before revisiting ADR-S002.

@@ -93,6 +93,46 @@ The cross-architecture check needs `qemu-user-static` and the
 `riscv64gc-unknown-linux-gnu` target; without them `run.sh` skips it and says
 so rather than passing silently.
 
+## Running on device
+
+`device/` is the on-device half: a `no_std` library that runs the committed
+`.wasm`, times it, self-checks, and derives **fuel-per-second** — the constant
+that makes every fuel figure in the finding convertible to time.
+
+It compiles for `riscv32imafc-unknown-none-elf` today and its logic is tested
+here (17 tests, five of which inject faults and confirm the run refuses to
+report). It has never run on silicon.
+
+```bash
+cd device
+cargo build --release --target riscv32imafc-unknown-none-elf   # compiles now
+cargo test                                                     # logic, on host
+```
+
+Board glue supplies four things and calls `run`:
+
+1. **Entry point** — `riscv-rt` or `esp-hal`, clocks configured to the rate
+   passed as `hz`.
+2. **Global allocator** — `wasmi` needs `alloc`. Internal SRAM is enough.
+3. **A `Clock`** — `CycleClock` reads `mcycle`/`mcycleh`. Standard machine-mode
+   RISC-V, **unverified on P4**. `run` calls `self_check` first and refuses to
+   measure a counter that is stuck, zero-rate, or non-monotonic, because a
+   stuck cycle counter reads as an infinitely fast device.
+4. **A `core::fmt::Write` sink** — defmt adapter, UART, RTT.
+
+**This does not need PSRAM.** The module is 11,555 bytes; the measurement
+should fit in internal SRAM. So it does not block on B1, and it is the
+cheapest useful thing to run on a newly arrived board.
+
+## The committed artifact
+
+`artifacts/w1_guest.wasm` is the exact module the finding's fuel figures were
+measured against, with its sha256 beside it. It is committed rather than
+rebuilt because those figures are a property of these bytes — a different
+toolchain produces a different module and the device numbers would no longer
+be comparable to the host ones. `run.sh` rebuilds the guest and fails if the
+result no longer matches the committed hash.
+
 ## Layout
 
 ```
@@ -103,7 +143,10 @@ guest/          the app workload, no_std, wasm32-unknown-unknown
   arena.rs      static bump arena, no `alloc`
 corpus/         60+ lines each of Markdown and Fountain, chosen for the
                 cases that break line-independent classification
-src/            the harness: runner.rs measures, report.rs checks itself
+artifacts/      the pinned .wasm the finding's numbers refer to, + sha256
+src/            desktop harness: runner.rs measures, report.rs checks itself
+device/         no_std on-device runner, riscv32imafc; clock.rs, stats.rs,
+                runner.rs, verify.rs — awaiting board glue
 ```
 
 `guest/src/tree.rs` mirrors the *shape* of SPEC-02 §4's encoding so the fuel
